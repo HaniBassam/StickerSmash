@@ -1,6 +1,8 @@
 import { ImageSourcePropType, View, StyleSheet } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as MediaLibrary from "expo-media-library";
+import { captureRef } from "react-native-view-shot";
 
 import Button from "@/components/button";
 import ImageViewer from "@/components/ImageViewer";
@@ -14,6 +16,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 const PlaceholderImage = require("../../assets/images/background-image.png");
 
 export default function Index() {
+  const imageRef = useRef<View>(null);
+  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   const [selectedImage, setSelectedImage] = useState<string | undefined>(
     undefined,
   );
@@ -38,6 +42,12 @@ export default function Index() {
     }
   };
 
+  useEffect(() => {
+    if (!permissionResponse?.granted) {
+      requestPermission();
+    }
+  }, []);
+
   const onReset = () => {
     setShowAppOptions(false);
   };
@@ -50,21 +60,34 @@ export default function Index() {
     setIsModalVisible(false);
   };
 
-  const onSaveImageAsync = () => {
-    setIsModalVisible(false);
+  const onSaveImageAsync = async () => {
+    try {
+      const localUri = await captureRef(imageRef, {
+        height: 440,
+        quality: 1,
+      });
+
+      await MediaLibrary.saveToLibraryAsync(localUri);
+      if (localUri) {
+        alert("Saved!");
+      }
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      {/* ...rest of the code remains */}
-      <View style={styles.imageContainer}>
-        <ImageViewer
-          imgSource={PlaceholderImage}
-          selectedImage={selectedImage}
-        />
-        {pickedEmoji ? (
-          <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />
-        ) : null}
+      <View ref={imageRef} collapsable={false}>
+        <View style={styles.imageContainer}>
+          <ImageViewer
+            imgSource={PlaceholderImage}
+            selectedImage={selectedImage}
+          />
+          {pickedEmoji ? (
+            <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />
+          ) : null}
+        </View>
       </View>
       {showAppOptions ? (
         <View style={styles.optionsContainer}>
@@ -105,16 +128,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   imageContainer: {
-    flex: 1,
     paddingTop: 28,
+    alignItems: "center",
   },
   footerContainer: {
-    flex: 1 / 3,
+    width: "100%",
     alignItems: "center",
+    paddingTop: 24,
+    paddingBottom: 24,
   },
   optionsContainer: {
     position: "absolute",
     bottom: 80,
+    width: "100%",
+    alignItems: "center",
   },
   optionsRow: {
     alignItems: "center",
