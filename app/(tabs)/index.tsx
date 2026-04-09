@@ -6,6 +6,7 @@ import Button from "@/components/button";
 import ImageViewer from "@/components/ImageViewer";
 import CircleButton from "@/components/CircleButton";
 import IconButton from "@/components/IconButton";
+import EmojiSticker from "@/components/EmojiSticker";
 
 const PlaceholderImage = require("../../assets/images/background-image.png");
 
