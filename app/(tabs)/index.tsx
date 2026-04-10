@@ -1,8 +1,10 @@
-import { ImageSourcePropType, View, StyleSheet } from "react-native";
+import { ImageSourcePropType, View, StyleSheet, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useState, useEffect, useRef } from "react";
 import * as MediaLibrary from "expo-media-library";
 import { captureRef } from "react-native-view-shot";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import domtoimage from "dom-to-image";
 
 import Button from "@/components/button";
 import ImageViewer from "@/components/ImageViewer";
@@ -11,7 +13,6 @@ import IconButton from "@/components/IconButton";
 import EmojiPicker from "@/components/EmojiPicker";
 import EmojiSticker from "@/components/EmojiSticker";
 import EmojiList from "@/components/EmojiList";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const PlaceholderImage = require("../../assets/images/background-image.png");
 
@@ -61,18 +62,35 @@ export default function Index() {
   };
 
   const onSaveImageAsync = async () => {
-    try {
-      const localUri = await captureRef(imageRef, {
-        height: 440,
-        quality: 1,
-      });
+    if (Platform.OS !== "web") {
+      try {
+        const localUri = await captureRef(imageRef, {
+          height: 440,
+          quality: 1,
+        });
 
-      await MediaLibrary.saveToLibraryAsync(localUri);
-      if (localUri) {
-        alert("Saved!");
+        await MediaLibrary.saveToLibraryAsync(localUri);
+        if (localUri) {
+          alert("Saved!");
+        }
+      } catch (e) {
+        console.log(e);
       }
-    } catch (e) {
-      console.log(e);
+    } else {
+      try {
+        const dataUrl = await domtoimage.toJpeg(imageRef.current, {
+          quality: 0.95,
+          width: 320,
+          height: 440,
+        });
+
+        let link = document.createElement("a");
+        link.download = "sticker-smash.jpeg";
+        link.href = dataUrl;
+        link.click();
+      } catch (e) {
+        console.log(e);
+      }
     }
   };
 
